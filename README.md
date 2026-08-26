@@ -155,6 +155,10 @@ and simulation internals.
 ├── package.json
 └── ARCHITECTURE.md      # protocol reference + simulation internals
 ```
+### APIs and External Technologies
+-**WebSocket (ws)**- used for  real time two way communication
+### AI Tools Used During Development
+- **claude** -= used foe error detection in code 
 
 ## Known Limitations
 
