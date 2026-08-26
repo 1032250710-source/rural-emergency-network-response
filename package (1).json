@@ -1,0 +1,31 @@
+{
+  "name": "nerve-dispatch-engine",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Real-time rural ambulance dispatch simulator — server-authoritative Dijkstra routing over a live WebSocket feed.",
+  "main": "server.js",
+  "keywords": [
+    "emergency-dispatch",
+    "healthcare",
+    "ambulance",
+    "dijkstra",
+    "routing-algorithm",
+    "real-time",
+    "websocket",
+    "nodejs",
+    "express",
+    "javascript",
+    "simulation",
+    "hackathon"
+  ],
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "ws": "^8.18.0"
+  }
+}
