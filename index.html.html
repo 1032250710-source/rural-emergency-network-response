@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NERVE // Rural Dispatch Engine</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root{
+    --bg:#0a1418;
+    --bg-panel:#0e1c22;
+    --bg-panel-alt:#122630;
+    --bg-raised:#16303a;
+    --line:#1c3841;
+    --line-soft:#132931;
+    --text:#e9f3f1;
+    --text-dim:#82a2a6;
+    --text-faint:#4d6b70;
+    --amber:#f2a93b;
+    --cyan:#45d9c7;
+    --red:#e5484d;
+    --green:#57c785;
+    --violet:#9b8cf2;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(1200px 700px at 15% -10%, #103038 0%, transparent 60%),
+      radial-gradient(900px 600px at 110% 10%, #14202a 0%, transparent 55%),
+      var(--bg);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    overflow:hidden;
+  }
+  ::-webkit-scrollbar{width:8px;height:8px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px;}
+
+  #app{
+    display:grid;
+    grid-template-rows:auto 1fr;
+    height:100vh;
+    padding:14px;
+    gap:12px;
+  }
+
+  /* ---------- TOPBAR ---------- */
+  #topbar{
+    display:flex;
+    align-items:center;
+    gap:18px;
+    padding:12px 18px;
+    background:linear-gradient(180deg, var(--bg-panel-alt), var(--bg-panel));
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    flex-wrap:wrap;
+  }
+  .brand{display:flex;align-items:center;gap:10px;margin-right:4px;}
+  .brand .mark{
+    width:34px;height:34px;border-radius:8px;
+    background:conic-gradient(from 210deg, var(--cyan), var(--amber), var(--cyan));
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Space Grotesk';font-weight:700;color:#04141a;font-size:15px;
+    box-shadow:0 0 18px rgba(69,217,199,0.35);
+  }
+  .brand h1{
+    font-family:'Space Grotesk';font-size:16px;letter-spacing:0.5px;margin:0;font-weight:700;
+  }
+  .brand span{display:block;font-size:10.5px;color:var(--text-dim);font-family:'IBM Plex Mono';letter-spacing:1px;}
+
+  .kpis{display:flex;gap:10px;flex-wrap:wrap;flex:1;}
+  .kpi{
+    background:var(--bg-raised);
+    border:1px solid var(--line-soft);
+    border-radius:8px;
+    padding:6px 12px;
+    min-width:86px;
+    font-family:'IBM Plex Mono';
+  }
+  .kpi .lbl{font-size:9px;color:var(--text-faint);letter-spacing:0.8px;text-transform:uppercase;}
+  .kpi .val{font-size:15px;font-weight:600;color:var(--text);}
+  .kpi .val.amber{color:var(--amber);}
+  .kpi .val.cyan{color:var(--cyan);}
+  .kpi .val.red{color:var(--red);}
+  .kpi .val.green{color:var(--green);}
+
+  .controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  button.ctl{
+    font-family:'Inter';font-size:12.5px;font-weight:600;
+    background:var(--bg-raised);color:var(--text);
+    border:1px solid var(--line-soft);border-radius:7px;
+    padding:8px 13px;cursor:pointer;transition:all .15s ease;
+    display:flex;align-items:center;gap:6px;
+  }
+  button.ctl:hover{border-color:var(--cyan);color:var(--cyan);}
+  button.ctl.primary{background:var(--cyan);color:#04141a;border-color:var(--cyan);}
+  button.ctl.primary:hover{background:#57e6d4;color:#04141a;}
+  button.ctl.warn:hover{border-color:var(--amber);color:var(--amber);}
+  button.ctl.danger:hover{border-color:var(--red);color:var(--red);}
+  .speedwrap{display:flex;align-items:center;gap:6px;font-family:'IBM Plex Mono';font-size:11px;color:var(--text-dim);}
+  input[type=range]{accent-color:var(--cyan);width:80px;}
+
+  /* ---------- MAIN GRID ---------- */
+  #main{
+    display:grid;
+    grid-template-columns:1fr 340px;
+    grid-template-rows:1fr 200px;
+    gap:12px;
+    min-height:0;
+  }
+  .panel{
+    background:linear-gradient(180deg, var(--bg-panel-alt), var(--bg-panel));
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    display:flex;flex-direction:column;
+    min-height:0;
+    overflow:hidden;
+  }
+  .panel-head{
+    padding:9px 14px;
+    border-bottom:1px solid var(--line);
+    display:flex;align-items:center;justify-content:space-between;
+    flex-shrink:0;
+  }
+  .panel-head h2{
+    font-family:'Space Grotesk';font-size:11px;letter-spacing:1.4px;
+    text-transform:uppercase;color:var(--text-dim);margin:0;font-weight:600;
+  }
+  .panel-head .n01{color:var(--text-faint);font-family:'IBM Plex Mono';font-size:10px;}
+
+  /* ---------- MAP ---------- */
+  #mapPanel{grid-row:1;grid-column:1;position:relative;}
+  #mapCanvas{width:100%;height:100%;display:block;cursor:crosshair;}
+  #tooltip{
+    position:absolute;pointer-events:none;
+    background:#0c1c22;border:1px solid var(--cyan);border-radius:8px;
+    padding:8px 11px;font-family:'IBM Plex Mono';font-size:11px;line-height:1.5;
+    color:var(--text);opacity:0;transition:opacity .1s;z-index:10;
+    max-width:220px;box-shadow:0 8px 24px rgba(0,0,0,.5);
+  }
+  .legend{display:flex;gap:12px;padding:6px 14px;font-size:10px;color:var(--text-dim);font-family:'IBM Plex Mono';flex-wrap:wrap;border-top:1px solid var(--line);}
+  .legend span{display:flex;align-items:center;gap:5px;}
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+
+  /* ---------- SIDEBAR ---------- */
+  #sidePanel{grid-row:1 / span 2;grid-column:2;overflow-y:auto;}
+  .sec{border-bottom:1px solid var(--line);}
+  .sec:last-child{border-bottom:none;}
+  .sec-title{
+    padding:10px 14px 6px;font-family:'Space Grotesk';font-size:10.5px;
+    letter-spacing:1.2px;text-transform:uppercase;color:var(--text-faint);font-weight:600;
+  }
+  .row{
+    display:flex;align-items:center;gap:8px;
+    padding:6px 14px;font-size:12px;
+  }
+  .badge{
+    font-family:'IBM Plex Mono';font-size:9.5px;font-weight:600;
+    padding:2px 6px;border-radius:5px;letter-spacing:.4px;text-transform:uppercase;
+  }
+  .badge.idle{background:rgba(87,199,133,.15);color:var(--green);}
+  .badge.pickup{background:rgba(242,169,59,.15);color:var(--amber);}
+  .badge.transport{background:rgba(69,217,199,.15);color:var(--cyan);}
+  .badge.return{background:rgba(155,140,242,.15);color:var(--violet);}
+  .badge.crit{background:rgba(229,72,77,.18);color:var(--red);}
+  .badge.urgent{background:rgba(242,169,59,.18);color:var(--amber);}
+  .badge.routine{background:rgba(130,162,166,.18);color:var(--text-dim);}
+  .amb-id{font-family:'IBM Plex Mono';color:var(--text-dim);width:40px;flex-shrink:0;font-size:11px;}
+  .amb-info{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-dim);font-size:10.5px;}
+
+  .fac{padding:8px 14px;border-top:1px solid var(--line-soft);}
+  .fac:first-of-type{border-top:none;}
+  .fac-name{font-size:12px;font-weight:600;margin-bottom:5px;display:flex;justify-content:space-between;}
+  .fac-name small{font-weight:400;color:var(--text-faint);font-family:'IBM Plex Mono';}
+  .meter{height:5px;border-radius:3px;background:var(--line-soft);overflow:hidden;margin-bottom:4px;}
+  .meter i{display:block;height:100%;border-radius:3px;}
+  .chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px;}
+  .chip{font-size:9px;font-family:'IBM Plex Mono';padding:2px 5px;border-radius:4px;background:var(--bg-raised);color:var(--text-faint);border:1px solid var(--line-soft);}
+  .chip.on{color:var(--cyan);border-color:rgba(69,217,199,.35);}
+
+  .qrow{padding:7px 14px;border-top:1px solid var(--line-soft);font-size:11.5px;}
+  .qrow:first-of-type{border-top:none;}
+  .qrow .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;}
+  .qrow .meta{color:var(--text-faint);font-family:'IBM Plex Mono';font-size:10px;}
+  .empty{padding:16px 14px;color:var(--text-faint);font-size:11.5px;font-style:italic;}
+
+  /* ---------- LOG ---------- */
+  #logPanel{grid-row:2;grid-column:1;}
+  #logFeed{flex:1;overflow-y:auto;padding:6px 0;font-family:'IBM Plex Mono';font-size:11.5px;}
+  .logline{
+    padding:4px 14px;border-left:2px solid transparent;display:flex;gap:9px;
+    animation:slidein .25s ease;
+  }
+  @keyframes slidein{from{opacity:0;transform:translateY(-3px);}to{opacity:1;transform:translateY(0);}}
+  .logline .t{color:var(--text-faint);flex-shrink:0;}
+  .logline.info{border-color:var(--line-soft);color:var(--text-dim);}
+  .logline.dispatch{border-color:var(--cyan);color:var(--text);}
+  .logline.success{border-color:var(--green);color:var(--text);}
+  .logline.warn{border-color:var(--amber);color:#f5d9ad;}
+  .logline.crit{border-color:var(--red);color:#f5b7b9;}
+  .logline .msg b{color:var(--cyan);font-weight:600;}
+  .logline.crit .msg b, .logline.warn .msg b{color:inherit;text-decoration:underline;}
+
+  @media (max-width:980px){
+    #main{grid-template-columns:1fr;grid-template-rows:auto auto auto;}
+    #sidePanel{grid-row:auto;grid-column:1;max-height:340px;}
+    #mapPanel{grid-row:auto;grid-column:1;height:380px;}
+    #logPanel{grid-row:auto;grid-column:1;height:220px;}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div id="topbar">
+    <div class="brand">
+      <div class="mark">N</div>
+      <div>
+        <h1>NERVE Dispatch Engine</h1>
+        <span>RURAL HEALTHCARE ROUTING &middot; LIVE SIM</span>
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi"><div class="lbl">Sim Clock</div><div class="val cyan" id="kpiClock">00:00</div></div>
+      <div class="kpi"><div class="lbl">Pending Req</div><div class="val amber" id="kpiPending">0</div></div>
+      <div class="kpi"><div class="lbl">Active Dispatch</div><div class="val" id="kpiActive">0</div></div>
+      <div class="kpi"><div class="lbl">Fleet Idle</div><div class="val green" id="kpiFleet">0/0</div></div>
+      <div class="kpi"><div class="lbl">Avg Route Cost</div><div class="val" id="kpiAvgCost">–</div></div>
+      <div class="kpi"><div class="lbl">Algo Time</div><div class="val cyan" id="kpiAlgo">0.00ms</div></div>
+      <div class="kpi"><div class="lbl">SLA Breaches</div><div class="val red" id="kpiSla">0</div></div>
+    </div>
+
+    <div class="controls">
+      <div class="speedwrap">SPEED <input type="range" id="speedSlider" min="0.5" max="4" step="0.5" value="1"><span id="speedVal">1.0x</span></div>
+      <button class="ctl primary" id="btnPlay">⏸ Pause</button>
+      <button class="ctl warn" id="btnEmergency">＋ New Emergency</button>
+      <button class="ctl warn" id="btnClosure">⨯ Close Road</button>
+      <button class="ctl danger" id="btnReset">↻ Reset Sim</button>
+    </div>
+  </div>
+
+  <div id="main">
+    <div class="panel" id="mapPanel">
+      <div class="panel-head"><h2>01 // Interactive Map — Dispatch Grid</h2><span class="n01" id="mapMeta"></span></div>
+      <canvas id="mapCanvas"></canvas>
+      <div id="tooltip"></div>
+      <div class="legend">
+        <span><i class="dot" style="background:#82a2a6"></i>Village</span>
+        <span><i class="dot" style="background:var(--cyan);border-radius:3px;"></i>Hospital</span>
+        <span><i class="dot" style="background:var(--amber)"></i>Pending request</span>
+        <span><i class="dot" style="background:var(--red)"></i>Blocked road</span>
+        <span><i class="dot" style="background:var(--cyan)"></i>Active route</span>
+        <span style="margin-left:auto;color:var(--text-faint)">click a node for details</span>
+      </div>
+    </div>
+
+    <div class="panel" id="sidePanel">
+      <div class="panel-head"><h2>02 // Live Telemetry</h2></div>
+
+      <div class="sec">
+        <div class="sec-title">Fleet Status</div>
+        <div id="fleetList"></div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-title">Facility Capacity</div>
+        <div id="facList"></div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-title">Request Queue (priority order)</div>
+        <div id="queueList"></div>
+      </div>
+    </div>
+
+    <div class="panel" id="logPanel">
+      <div class="panel-head"><h2>03 // Decision Log — Cost Transparency</h2><span class="n01">why each route was chosen</span></div>
+      <div id="logFeed"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* =========================================================================
+   CORE ALGORITHMS — binary-heap Dijkstra, graph generation
+   ========================================================================= */
+
+class MinHeap{
+  constructor(){ this.a = []; }
+  size(){ return this.a.length; }
+  push(item, key){
+    const a = this.a;
+    a.push({item, key});
+    let i = a.length - 1;
+    while(i > 0){
+      const p = (i - 1) >> 1;
+      if(a[p].key <= a[i].key) break;
+      [a[p], a[i]] = [a[i], a[p]];
+      i = p;
+    }
+  }
+  pop(){
+    const a = this.a;
+    if(!a.length) return null;
+    const top = a[0];
+    const last = a.pop();
+    if(a.length){
+      a[0] = last;
+      let i = 0;
+      while(true){
+        let l = i*2+1, r = i*2+2, s = i;
+        if(l < a.length && a[l].key < a[s].key) s = l;
+        if(r < a.length && a[r].key < a[s].key) s = r;
+        if(s === i) break;
+        [a[s], a[i]] = [a[i], a[s]];
+        i = s;
+      }
+    }
+    return top;
+  }
+}
+
+function seededRandom(seed){
+  let s = seed % 2147483647;
+  if(s <= 0) s += 2147483646;
+  return function(){ s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
+}
+
+function dijkstra(adj, source, n){
+  const dist = new Float64Array(n).fill(Infinity);
+  const prev = new Int32Array(n).fill(-1);
+  dist[source] = 0;
+  const heap = new MinHeap();
+  heap.push(source, 0);
+  const visited = new Uint8Array(n);
+  while(heap.size()){
+    const {item:u, key:d} = heap.pop();
+    if(visited[u]) continue;
+    visited[u] = 1;
+    if(d > dist[u]) continue;
+    const edges = adj[u];
+    for(let k=0;k<edges.length;k++){
+      const e = edges[k];
+      if(e.blocked) continue;
+      const nd = dist[u] + e.w;
+      if(nd < dist[e.to]){
+        dist[e.to] = nd;
+        prev[e.to] = u;
+        heap.push(e.to, nd);
+      }
+    }
+  }
+  return {dist, prev};
+}
+
+function pathFromSource(prev, target){
+  const path = [];
+  let cur = target;
+  let guard = 0;
+  while(cur !== -1 && guard++ < 100000){ path.push(cur); cur = prev[cur]; }
+  return path.reverse();
+}
+
+function edgeWeight(adj, a, b){
+  const edges = adj[a];
+  for(let i=0;i<edges.length;i++) if(edges[i].to === b) return edges[i].w;
+  return 0;
+}
+
+/* =========================================================================
+   WORLD GENERATION
+   ========================================================================= */
+
+const SPECIALTIES = ['General Medicine','Cardiology','Orthopedics','Pediatrics','Neurology','Trauma Surgery'];
+const MED_CATS = ['Antibiotics','Analgesics','Cardiac Meds','Anti-Inflammatory','IV Fluids','Trauma Kits'];
+const SPEC_TO_MED = {
+  'General Medicine':'Antibiotics','Cardiology':'Cardiac Meds','Orthopedics':'Anti-Inflammatory',
+  'Pediatrics':'Analgesics','Neurology':'IV Fluids','Trauma Surgery':'Trauma Kits'
+};
+const URGENCY = [
+  {name:'Critical', weight:0.15, rank:0, slaTicks:9,  color:'var(--red)'},
+  {name:'Urgent',   weight:0.35, rank:1, slaTicks:20, color:'var(--amber)'},
+  {name:'Routine',  weight:0.50, rank:2, slaTicks:9999,color:'var(--text-dim)'}
+];
+const HOSPITAL_NAMES = [
+  'Sunrise District Hospital','Riverside Health Center','St. Meridian Medical','Hilltop Community Clinic',
+  'Green Valley General','North Ridge Hospital','Lotus Rural Health Center','Union Trauma Institute',
+  'Pinegrove Medical Center','Ashford District Hospital','Blue Delta Clinic','Cedar Point General',
+  'Harbor Light Hospital','Wellspring Health Center'
+];
+const VILLAGE_SYL = ['Ka','Ra','Ni','Su','Ma','Ta','Vi','Lo','Pa','Do','Chi','Bel','Ha','Sa','Ru','Mi','Ko','Wa'];
+
+function genVillageName(rand){
+  const n = 2 + Math.floor(rand()*2);
+  let s = '';
+  for(let i=0;i<n;i++) s += VILLAGE_SYL[Math.floor(rand()*VILLAGE_SYL.length)];
+  return s + (rand()<0.4 ? 'pur' : rand()<0.5 ? 'gaon' : '');
+}
+
+const N_VILLAGES = 90;
+const N_HOSPITALS = 14;
+const K_NEAREST = 4;
+const AMBULANCES_PER_HOSPITAL = 1;
+
+let world = null; // rebuilt on init/reset
+
+function buildWorld(seed){
+  const rand = seededRandom(seed);
+  const nodes = [];
+  for(let i=0;i<N_VILLAGES;i++){
+    nodes.push({id:i, type:'village', x: 40+rand()*920, y: 40+rand()*820, name: genVillageName(rand)});
+  }
+  for(let i=0;i<N_HOSPITALS;i++){
+    const maxBeds = 6 + Math.floor(rand()*10);
+    const specialists = {};
+    SPECIALTIES.forEach(s=>{ specialists[s] = (s==='General Medicine') ? true : rand() < 0.42; });
+    const medicine = {};
+    MED_CATS.forEach(m=> medicine[m] = 4 + Math.floor(rand()*14));
+    nodes.push({
+      id: N_VILLAGES+i, type:'hospital',
+      x: 40+rand()*920, y: 40+rand()*820,
+      name: HOSPITAL_NAMES[i % HOSPITAL_NAMES.length],
+      maxBeds, beds: maxBeds, specialists, medicine, queueCount:0, occupants:[]
+    });
+  }
+  // guarantee every specialty is on duty somewhere
+  SPECIALTIES.forEach(spec=>{
+    const has = nodes.some(nd=> nd.type==='hospital' && nd.specialists[spec]);
+    if(!has){
+      const h = nodes.filter(nd=>nd.type==='hospital')[Math.floor(rand()*N_HOSPITALS)];
+      h.specialists[spec] = true;
+    }
+  });
+
+  const n = nodes.length;
+  const adj = Array.from({length:n}, ()=>[]);
+  const seen = new Set();
+  function dist2(a,b){ return Math.hypot(a.x-b.x, a.y-b.y); }
+  function addEdge(a,b){
+    if(a===b) return;
+    const k = a<b ? a+'_'+b : b+'_'+a;
+    if(seen.has(k)) return;
+    seen.add(k);
+    const w = dist2(nodes[a], nodes[b]) * (0.75 + rand()*0.7);
+    adj[a].push({to:b, w, blocked:false});
+    adj[b].push({to:a, w, blocked:false});
+  }
+  for(let i=0;i<n;i++){
+    const ds = [];
+    for(let j=0;j<n;j++) if(j!==i) ds.push([j, dist2(nodes[i],nodes[j])]);
+    ds.sort((a,b)=>a[1]-b[1]);
+    for(let k=0;k<K_NEAREST;k++) addEdge(i, ds[k][0]);
+  }
+  // ensure full connectivity
+  function components(){
+    const comp = new Array(n).fill(-1); let c=0;
+    for(let s=0;s<n;s++){
+      if(comp[s]!==-1) continue;
+      const stack=[s]; comp[s]=c;
+      while(stack.length){
+        const u = stack.pop();
+        for(const e of adj[u]) if(comp[e.to]===-1){ comp[e.to]=c; stack.push(e.to); }
+      }
+      c++;
+    }
+    return {comp, c};
+  }
+  let {comp, c} = components();
+  let guard = 0;
+  while(c > 1 && guard++ < 500){
+    const zero = []; for(let i=0;i<n;i++) if(comp[i]===0) zero.push(i);
+    let best=null, bestD=Infinity;
+    for(const i of zero) for(let j=0;j<n;j++) if(comp[j]!==0){
+      const d = dist2(nodes[i],nodes[j]);
+      if(d<bestD){ bestD=d; best=[i,j]; }
+    }
+    if(!best) break;
+    addEdge(best[0], best[1]);
+    ({comp, c} = components());
+  }
+
+  const hospitalIds = nodes.filter(nd=>nd.type==='hospital').map(nd=>nd.id);
+  const ambulances = [];
+  let ambId = 1;
+  hospitalIds.forEach(hid=>{
+    for(let k=0;k<AMBULANCES_PER_HOSPITAL;k++){
+      ambulances.push({
+        id: 'A-'+String(ambId++).padStart(2,'0'),
+        homeNode: hid, currentNode: hid,
+        status:'idle', route:null, cumDist:null, traveled:0,
+        x: nodes[hid].x, y: nodes[hid].y,
+        targetVillage:null, targetHospital:null, requestId:null, phaseSplit:0
+      });
+    }
+  });
+  // a couple of floating ambulances at random villages for realism
+  for(let k=0;k<3;k++){
+    const vid = Math.floor(rand()*N_VILLAGES);
+    ambulances.push({
+      id:'A-'+String(ambId++).padStart(2,'0'),
+      homeNode: vid, currentNode: vid, status:'idle', route:null, cumDist:null, traveled:0,
+      x: nodes[vid].x, y: nodes[vid].y, targetVillage:null, targetHospital:null, requestId:null, phaseSplit:0
+    });
+  }
+
+  return {
+    nodes, adj, n, hospitalIds, ambulances,
+    pending: [], activeDispatches: [], decisionLog: [],
+    tick: 0, nextReqId: 1, blocked: [], // {a,b,reopenTick}
+    metrics:{ totalDispatched:0, totalCostSum:0, slaBreaches:0, lastAlgoMs:0 },
+    flaggedSla: new Set()
+  };
+}
+
+/* =========================================================================
+   SIMULATION LOGIC
+   ========================================================================= */
+
+function nodeById(w, id){ return w.nodes[id]; }
+
+function spawnRequest(w){
+  const rand = Math.random;
+  const villageId = Math.floor(rand()*N_VILLAGES);
+  const specialty = SPECIALTIES[Math.floor(rand()*SPECIALTIES.length)];
+  let r = rand(), acc=0, urgency = URGENCY[URGENCY.length-1];
+  for(const u of URGENCY){ acc+=u.weight; if(r<=acc){ urgency = u; break; } }
+  const req = {
+    id: w.nextReqId++,
+    villageId, specialty, urgency,
+    spawnTick: w.tick, waitTicks: 0
+  };
+  w.pending.push(req);
+  logLine(w, 'info', `New request <b>#${req.id}</b> from ${nodeById(w,villageId).name} — needs ${specialty} (${urgency.name})`);
+  return req;
+}
+
+function scoreRequest(req){
+  return req.urgency.rank*1000 - req.waitTicks*4;
+}
+
+function logLine(w, kind, msg){
+  w.decisionLog.unshift({kind, msg, tick:w.tick, ts:Date.now()});
+  if(w.decisionLog.length > 150) w.decisionLog.length = 150;
+}
+
+function fmtClock(ticks){
+  const totalSec = ticks * 4; // 1 tick = 4 simulated seconds
+  const m = Math.floor(totalSec/60).toString().padStart(2,'0');
+  const s = (totalSec%60).toString().padStart(2,'0');
+  return m+':'+s;
+}
+
+function attemptDispatch(w, req, distCache){
+  let dp = distCache.get(req.villageId);
+  const t0 = performance.now();
+  if(!dp){ dp = dijkstra(w.adj, req.villageId, w.n); distCache.set(req.villageId, dp); }
+  w.metrics.lastAlgoMs = performance.now() - t0;
+  const {dist, prev} = dp;
+
+  const hospitals = w.hospitalIds.map(id=>nodeById(w,id)).filter(h=> h.beds>0 && isFinite(dist[h.id]));
+  if(hospitals.length===0){
+    logLine(w,'warn', `Req <b>#${req.id}</b> (${nodeById(w,req.villageId).name}): no reachable hospital with free beds — holding in queue (fallback routing standby)`);
+    return false;
+  }
+
+  let pool = hospitals.filter(h=>h.specialists[req.specialty]);
+  let matched = true;
+  if(pool.length===0){
+    matched = false;
+    pool = hospitals.filter(h=>h.specialists['Trauma Surgery'] || h.specialists['General Medicine']);
+    if(pool.length===0) pool = hospitals;
+  }
+
+  function cost(h){
+    const travel = dist[h.id];
+    const wait = (h.maxBeds - h.beds) * 5 + h.queueCount*6;
+    const medCat = SPEC_TO_MED[req.specialty];
+    const medPenalty = (h.medicine[medCat] <= 2) ? 45 : 0;
+    return {total: travel+wait+medPenalty, travel, wait, medPenalty};
+  }
+
+  const ranked = pool.map(h=>({h, c:cost(h)})).sort((a,b)=>a.c.total-b.c.total);
+  const chosen = ranked[0];
+
+  // ambulances
+  const idle = w.ambulances.filter(a=>a.status==='idle');
+  if(idle.length===0){
+    const top3 = ranked.slice(0,3).map(r=>`${r.h.name.split(' ')[0]}(${r.c.total.toFixed(0)})`).join(', ');
+    logLine(w,'warn', `Req <b>#${req.id}</b>: best facility ${chosen.h.name} selected, but <b>all ambulances occupied</b> — queued. Candidates: ${top3}`);
+    return false;
+  }
+  const rankedAmb = idle.map(a=>({a, d: dist[a.currentNode]})).sort((x,y)=>x.d-y.d);
+  const chosenAmb = rankedAmb[0];
+
+  // build route: ambulance -> village -> hospital
+  const villagePathFromAmb = pathFromSource(prev, chosenAmb.a.currentNode).reverse(); // ambNode ... villageId
+  const hospitalPathFromVillage = pathFromSource(prev, chosen.h.id); // villageId ... hospitalId
+  const fullRoute = villagePathFromAmb.concat(hospitalPathFromVillage.slice(1));
+  const cumDist = [0];
+  for(let i=1;i<fullRoute.length;i++){
+    cumDist.push(cumDist[i-1] + edgeWeight(w.adj, fullRoute[i-1], fullRoute[i]));
+  }
+
+  const amb = chosenAmb.a;
+  amb.status = 'to_patient';
+  amb.route = fullRoute;
+  amb.cumDist = cumDist;
+  amb.traveled = 0;
+  amb.phaseSplit = cumDist[villagePathFromAmb.length-1];
+  amb.targetVillage = req.villageId;
+  amb.targetHospital = chosen.h.id;
+  amb.requestId = req.id;
+  chosen.h.queueCount++;
+
+  w.activeDispatches.push({reqId:req.id, ambId:amb.id, hospitalId:chosen.h.id, villageId:req.villageId, spawnTick:req.spawnTick, urgency:req.urgency});
+  w.metrics.totalDispatched++;
+  w.metrics.totalCostSum += chosen.c.total;
+
+  const reasonBits = [];
+  if(!matched) reasonBits.push('no on-duty specialist nearby — routed to nearest capable facility');
+  if(chosen.c.medPenalty>0) reasonBits.push('low medicine stock flagged, still admitted');
+  const otherCandidate = ranked[1];
+  let compareTxt = otherCandidate ? ` (rejected ${otherCandidate.h.name.split(' ')[0]}: cost ${otherCandidate.c.total.toFixed(0)} vs chosen ${chosen.c.total.toFixed(0)})` : '';
+
+  logLine(w,'dispatch',
+    `Req <b>#${req.id}</b> ${nodeById(w,req.villageId).name} → <b>${chosen.h.name}</b> [travel ${chosen.c.travel.toFixed(0)} + wait ${chosen.c.wait.toFixed(0)}${chosen.c.medPenalty?' + med-risk '+chosen.c.medPenalty:''} = ${chosen.c.total.toFixed(0)}]${compareTxt}. Ambulance <b>${amb.id}</b> dispatched (${chosenAmb.d.toFixed(0)} units away).${reasonBits.length? ' ⚠ '+reasonBits.join('; '):''}`
+  );
+
+  // SLA check at dispatch time
+  if(req.urgency.rank===0 && req.waitTicks > req.urgency.slaTicks){
+    w.metrics.slaBreaches++;
+    logLine(w,'crit', `SLA BREACH — critical req <b>#${req.id}</b> waited ${req.waitTicks*4}s before dispatch (limit ${req.urgency.slaTicks*4}s)`);
+  }
+
+  return true;
+}
+
+function processQueue(w){
+  if(w.pending.length===0) return;
+  const heap = new MinHeap();
+  w.pending.forEach(r=> heap.push(r, scoreRequest(r)));
+  const ordered = [];
+  while(heap.size()) ordered.push(heap.pop().item);
+
+  const distCache = new Map();
+  const stillPending = [];
+  for(const req of ordered){
+    const ok = attemptDispatch(w, req, distCache);
+    if(!ok){
+      req.waitTicks++;
+      if(req.urgency.rank===0 && req.waitTicks > req.urgency.slaTicks && !w.flaggedSla.has(req.id)){
+        w.flaggedSla.add(req.id);
+        w.metrics.slaBreaches++;
+        logLine(w,'crit', `SLA BREACH — critical req <b>#${req.id}</b> from ${nodeById(w,req.villageId).name} still waiting (${req.waitTicks*4}s)`);
+      }
+      stillPending.push(req);
+    }
+  }
+  w.pending = stillPending;
+}
+
+function updateRoadClosures(w){
+  // reopen due closures
+  w.blocked = w.blocked.filter(b=>{
+    if(w.tick >= b.reopenTick){
+      setEdgeBlocked(w, b.a, b.b, false);
+      logLine(w,'success', `Road reopened between ${b.aName} and ${b.bName}`);
+      return false;
+    }
+    return true;
+  });
+  // random new closure
+  if(w.tick>0 && w.tick % 11 === 0 && Math.random() < 0.55){
+    triggerRandomClosure(w);
+  }
+}
+
+function setEdgeBlocked(w, a, b, val){
+  for(const e of w.adj[a]) if(e.to===b) e.blocked = val;
+  for(const e of w.adj[b]) if(e.to===a) e.blocked = val;
+}
+
+function triggerRandomClosure(w){
+  const candidates = [];
+  for(let a=0;a<w.n;a++) for(const e of w.adj[a]) if(a<e.to && !e.blocked) candidates.push([a,e.to]);
+  if(candidates.length===0) return;
+  const [a,b] = candidates[Math.floor(Math.random()*candidates.length)];
+  setEdgeBlocked(w,a,b,true);
+  const reopenTick = w.tick + 10 + Math.floor(Math.random()*14);
+  w.blocked.push({a,b, aName:nodeById(w,a).name, bName:nodeById(w,b).name, reopenTick});
+  logLine(w,'warn', `Road closure: <b>${nodeById(w,a).name} – ${nodeById(w,b).name}</b> blocked. Active/future routes rerouting around it.`);
+}
+
+function updateAmbulances(w, speedUnitsPerTick){
+  for(const amb of w.ambulances){
+    if(amb.status==='idle') continue;
+    amb.traveled += speedUnitsPerTick;
+    const cum = amb.cumDist, route = amb.route;
+    const total = cum[cum.length-1];
+
+    if(amb.status==='to_patient' && amb.traveled >= amb.phaseSplit){
+      amb.status = 'to_hospital';
+    }
+
+    if(amb.traveled >= total){
+      if(amb.status==='to_hospital'){
+        const hosp = nodeById(w, amb.targetHospital);
+        hosp.beds = Math.max(0, hosp.beds-1);
+        hosp.queueCount = Math.max(0, hosp.queueCount-1);
+        hosp.occupants.push(w.tick + 14 + Math.floor(Math.random()*22)); // patient stays, then discharges
+        const medCat = SPEC_TO_MED[ (w.activeDispatches.find(d=>d.reqId===amb.requestId)||{}).specialty ] || 'Antibiotics';
+        hosp.medicine[medCat] = Math.max(0, hosp.medicine[medCat]-1);
+        logLine(w,'success', `Ambulance <b>${amb.id}</b> delivered patient to <b>${hosp.name}</b> — bed occupied (${hosp.beds}/${hosp.maxBeds} free)`);
+        w.activeDispatches = w.activeDispatches.filter(d=>d.ambId!==amb.id);
+        // send home
+        const {prev} = dijkstra(w.adj, amb.targetHospital, w.n);
+        const homePath = pathFromSource(prev, amb.homeNode);
+        const cumD = [0];
+        for(let i=1;i<homePath.length;i++) cumD.push(cumD[i-1]+edgeWeight(w.adj, homePath[i-1], homePath[i]));
+        amb.status = 'returning';
+        amb.route = homePath; amb.cumDist = cumD; amb.traveled = 0;
+        amb.currentNode = amb.targetHospital;
+      } else if(amb.status==='returning'){
+        amb.status = 'idle';
+        amb.currentNode = amb.homeNode;
+        amb.route = null; amb.cumDist=null; amb.traveled=0;
+        amb.x = nodeById(w,amb.homeNode).x; amb.y = nodeById(w,amb.homeNode).y;
+      }
+      continue;
+    }
+    // interpolate position
+    let idx = 0;
+    while(idx < cum.length-2 && cum[idx+1] < amb.traveled) idx++;
+    const segStart = cum[idx], segEnd = cum[idx+1] || segStart;
+    const frac = segEnd>segStart ? (amb.traveled-segStart)/(segEnd-segStart) : 0;
+    const nA = nodeById(w, route[idx]), nB = nodeById(w, route[Math.min(idx+1, route.length-1)]);
+    amb.x = nA.x + (nB.x-nA.x)*frac;
+    amb.y = nA.y + (nB.y-nA.y)*frac;
+    if(amb.status!=='returning') amb.currentNode = route[idx];
+  }
+}
+
+function updateFacilities(w){
+  for(const id of w.hospitalIds){
+    const h = nodeById(w, id);
+    // discharge recovered patients, freeing beds
+    if(h.occupants.length){
+      const staying = [];
+      let freed = 0;
+      for(const dTick of h.occupants){
+        if(w.tick >= dTick) freed++; else staying.push(dTick);
+      }
+      if(freed){
+        h.beds = Math.min(h.maxBeds, h.beds + freed);
+        h.occupants = staying;
+        logLine(w,'info', `${freed} patient${freed>1?'s':''} discharged from <b>${h.name}</b> — ${h.beds}/${h.maxBeds} beds now free`);
+      }
+    }
+    // periodic medicine resupply
+    if((w.tick + id) % 26 === 0){
+      let restocked = false;
+      MED_CATS.forEach(m=>{
+        if(h.medicine[m] < 16){ h.medicine[m] = Math.min(20, h.medicine[m] + 3 + Math.floor(Math.random()*4)); restocked = true; }
+      });
+      if(restocked) logLine(w,'info', `Supply run: medicine restocked at <b>${h.name}</b>`);
+    }
+  }
+}
+
+function simTick(w){
+  w.tick++;
+  if(Math.random() < 0.45) spawnRequest(w);
+  updateRoadClosures(w);
+  updateFacilities(w);
+  processQueue(w);
+  updateAmbulances(w, BASE_SPEED);
+}
+
+const BASE_SPEED = 46; // distance units per tick
+
+/* =========================================================================
+   RENDERING
+   ========================================================================= */
+
+const canvas = document.getElementById('mapCanvas');
+const ctx = canvas.getContext('2d');
+const tooltip = document.getElementById('tooltip');
+let hoverNode = null, glowPhase = 0;
+
+function resizeCanvas(){
+  const rect = canvas.parentElement.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  const legendH = 30;
+  canvas.width = rect.width * dpr;
+  canvas.height = (rect.height - legendH) * dpr;
+  canvas.style.width = rect.width+'px';
+  canvas.style.height = (rect.height-legendH)+'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+
+function worldToScreen(x,y){
+  const w = canvas.width/(window.devicePixelRatio||1), h = canvas.height/(window.devicePixelRatio||1);
+  const pad = 24;
+  return { x: pad + (x/1000)*(w-2*pad), y: pad + (y/840)*(h-2*pad) };
+}
+
+function drawMap(){
+  if(!world) return;
+  const w = world;
+  const W = canvas.width/(window.devicePixelRatio||1), H = canvas.height/(window.devicePixelRatio||1);
+  ctx.clearRect(0,0,W,H);
+
+  // edges
+  ctx.lineWidth = 1;
+  for(let a=0;a<w.n;a++){
+    for(const e of w.adj[a]){
+      if(e.to < a) continue;
+      const p1 = worldToScreen(w.nodes[a].x, w.nodes[a].y);
+      const p2 = worldToScreen(w.nodes[e.to].x, w.nodes[e.to].y);
+      ctx.beginPath();
+      ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y);
+      if(e.blocked){
+        ctx.strokeStyle = 'rgba(229,72,77,0.75)';
+        ctx.setLineDash([4,3]);
+        ctx.lineWidth = 1.6;
+      } else {
+        ctx.strokeStyle = 'rgba(140,175,180,0.16)';
+        ctx.setLineDash([]);
+        ctx.lineWidth = 1;
+      }
+      ctx.stroke();
+    }
+  }
+  ctx.setLineDash([]);
+
+  // active ambulance routes (breadcrumb glow)
+  for(const amb of w.ambulances){
+    if(amb.status==='idle' || !amb.route) continue;
+    const col = amb.status==='to_patient' ? '242,169,59' : amb.status==='to_hospital' ? '69,217,199' : '155,140,242';
+    ctx.beginPath();
+    for(let i=0;i<amb.route.length;i++){
+      const p = worldToScreen(w.nodes[amb.route[i]].x, w.nodes[amb.route[i]].y);
+      if(i===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);
+    }
+    ctx.strokeStyle = `rgba(${col},0.55)`;
+    ctx.lineWidth = 2.2;
+    ctx.setLineDash([6,5]);
+    ctx.lineDashOffset = -glowPhase*22;
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // villages
+  for(const nd of w.nodes){
+    if(nd.type!=='village') continue;
+    const p = worldToScreen(nd.x,nd.y);
+    const hasPending = w.pending.some(r=>r.villageId===nd.id);
+    ctx.beginPath();
+    ctx.arc(p.x,p.y, hasPending? 4.4:2.6, 0, Math.PI*2);
+    if(hasPending){
+      const pulse = 0.5+0.5*Math.sin(glowPhase*0.18);
+      ctx.fillStyle = `rgba(242,169,59,${0.55+0.4*pulse})`;
+    } else {
+      ctx.fillStyle = 'rgba(130,162,166,0.55)';
+    }
+    ctx.fill();
+  }
+
+  // hospitals
+  for(const id of w.hospitalIds){
+    const nd = w.nodes[id];
+    const p = worldToScreen(nd.x,nd.y);
+    const occ = 1 - (nd.beds/nd.maxBeds);
+    const col = occ>0.85 ? '229,72,77' : occ>0.5 ? '242,169,59' : '69,217,199';
+    ctx.save();
+    ctx.translate(p.x,p.y);
+    ctx.fillStyle = `rgba(${col},0.85)`;
+    ctx.strokeStyle = '#04141a';
+    ctx.lineWidth=1;
+    roundRect(ctx,-6,-6,12,12,3);
+    ctx.fill(); ctx.stroke();
+    ctx.strokeStyle='#04141a'; ctx.lineWidth=1.4;
+    ctx.beginPath(); ctx.moveTo(-3,0); ctx.lineTo(3,0); ctx.moveTo(0,-3); ctx.lineTo(0,3); ctx.stroke();
+    ctx.restore();
+  }
+
+  // ambulances
+  for(const amb of w.ambulances){
+    const p = worldToScreen(amb.x, amb.y);
+    const col = amb.status==='idle' ? '87,199,133' : amb.status==='to_patient' ? '242,169,59' : amb.status==='to_hospital' ? '69,217,199' : '155,140,242';
+    ctx.save();
+    ctx.translate(p.x,p.y);
+    ctx.beginPath();
+    ctx.arc(0,0, amb.status==='idle'?3:4.6, 0, Math.PI*2);
+    ctx.fillStyle = `rgb(${col})`;
+    ctx.shadowColor = `rgb(${col})`;
+    ctx.shadowBlur = amb.status==='idle' ? 0 : 8;
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // hover highlight
+  if(hoverNode!=null){
+    const nd = w.nodes[hoverNode];
+    const p = worldToScreen(nd.x,nd.y);
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,10,0,Math.PI*2);
+    ctx.strokeStyle='rgba(69,217,199,0.9)';
+    ctx.lineWidth=1.5;
+    ctx.stroke();
+  }
+}
+
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+
+function findNodeNear(mx,my){
+  if(!world) return null;
+  let best=null, bestD=14;
+  for(const nd of world.nodes){
+    const p = worldToScreen(nd.x,nd.y);
+    const d = Math.hypot(p.x-mx,p.y-my);
+    if(d<bestD){ bestD=d; best=nd.id; }
+  }
+  return best;
+}
+
+canvas.addEventListener('mousemove', (ev)=>{
+  const rect = canvas.getBoundingClientRect();
+  const mx = ev.clientX-rect.left, my = ev.clientY-rect.top;
+  const id = findNodeNear(mx,my);
+  hoverNode = id;
+  if(id==null){ tooltip.style.opacity=0; return; }
+  const nd = world.nodes[id];
+  let html;
+  if(nd.type==='hospital'){
+    const specs = SPECIALTIES.filter(s=>nd.specialists[s]).join(', ');
+    html = `<b>${nd.name}</b><br>Beds: ${nd.beds}/${nd.maxBeds}<br>On duty: ${specs}`;
+  } else {
+    const req = world.pending.find(r=>r.villageId===id);
+    html = `<b>${nd.name}</b> (village)${req? '<br>⚠ pending: '+req.specialty+' ('+req.urgency.name+')' : '<br>no active request'}`;
+  }
+  tooltip.innerHTML = html;
+  tooltip.style.left = (mx+16)+'px';
+  tooltip.style.top = (my+10)+'px';
+  tooltip.style.opacity = 1;
+});
+canvas.addEventListener('mouseleave', ()=>{ tooltip.style.opacity=0; hoverNode=null; });
+
+/* =========================================================================
+   UI SYNC
+   ========================================================================= */
+
+function renderSidebar(){
+  const w = world;
+  // fleet
+  const statusLabel = {idle:'Idle', to_patient:'To Patient', to_hospital:'Transporting', returning:'Returning'};
+  const statusClass = {idle:'idle', to_patient:'pickup', to_hospital:'transport', returning:'return'};
+  document.getElementById('fleetList').innerHTML = w.ambulances.map(a=>{
+    const info = a.status==='idle' ? nodeById(w,a.currentNode).name : (a.status==='to_patient' ? '→ '+nodeById(w,a.targetVillage).name : a.status==='to_hospital' ? '→ '+nodeById(w,a.targetHospital).name.split(' ')[0] : 'to base');
+    return `<div class="row"><span class="amb-id">${a.id}</span><span class="badge ${statusClass[a.status]}">${statusLabel[a.status]}</span><span class="amb-info">${info}</span></div>`;
+  }).join('');
+
+  // facilities
+  document.getElementById('facList').innerHTML = w.hospitalIds.map(id=>{
+    const h = nodeById(w,id);
+    const occPct = Math.round((1-h.beds/h.maxBeds)*100);
+    const bedCol = occPct>85?'var(--red)':occPct>50?'var(--amber)':'var(--green)';
+    const lowestMed = MED_CATS.reduce((min,m)=> h.medicine[m]<h.medicine[min]?m:min, MED_CATS[0]);
+    const medPct = Math.min(100, Math.round((h.medicine[lowestMed]/16)*100));
+    const medCol = h.medicine[lowestMed]<=2 ? 'var(--red)' : h.medicine[lowestMed]<=5?'var(--amber)':'var(--green)';
+    const chips = SPECIALTIES.map(s=>`<span class="chip ${h.specialists[s]?'on':''}">${s.split(' ')[0]}</span>`).join('');
+    return `<div class="fac">
+      <div class="fac-name">${h.name} <small>${h.beds}/${h.maxBeds} beds</small></div>
+      <div class="meter"><i style="width:${100-occPct}%;background:${bedCol}"></i></div>
+      <div class="meter" title="Lowest stock: ${lowestMed}"><i style="width:${medPct}%;background:${medCol}"></i></div>
+      <div class="chips">${chips}</div>
+    </div>`;
+  }).join('');
+
+  // queue
+  const ordered = [...w.pending].sort((a,b)=>scoreRequest(a)-scoreRequest(b));
+  document.getElementById('queueList').innerHTML = ordered.length ? ordered.map(r=>{
+    const cls = r.urgency.rank===0?'crit':r.urgency.rank===1?'urgent':'routine';
+    const slaWarn = r.urgency.rank===0 && r.waitTicks > r.urgency.slaTicks*0.6 ? ' ⚠' : '';
+    return `<div class="qrow"><div class="top"><span>#${r.id} ${nodeById(w,r.villageId).name}</span><span class="badge ${cls}">${r.urgency.name}</span></div><div class="meta">${r.specialty} · waiting ${r.waitTicks*4}s${slaWarn}</div></div>`;
+  }).join('') : `<div class="empty">No pending requests — fleet fully caught up.</div>`;
+
+  // KPIs
+  document.getElementById('kpiClock').textContent = fmtClock(w.tick);
+  document.getElementById('kpiPending').textContent = w.pending.length;
+  document.getElementById('kpiActive').textContent = w.activeDispatches.length;
+  const idleCount = w.ambulances.filter(a=>a.status==='idle').length;
+  document.getElementById('kpiFleet').textContent = idleCount+'/'+w.ambulances.length;
+  document.getElementById('kpiAvgCost').textContent = w.metrics.totalDispatched ? (w.metrics.totalCostSum/w.metrics.totalDispatched).toFixed(0) : '–';
+  document.getElementById('kpiAlgo').textContent = w.metrics.lastAlgoMs.toFixed(2)+'ms';
+  document.getElementById('kpiSla').textContent = w.metrics.slaBreaches;
+  document.getElementById('mapMeta').textContent = `${w.n} nodes · ${w.adj.reduce((s,a)=>s+a.length,0)/2} edges`;
+
+  // log
+  document.getElementById('logFeed').innerHTML = w.decisionLog.slice(0,60).map(l=>{
+    const cls = l.kind;
+    return `<div class="logline ${cls}"><span class="t">${fmtClock(l.tick)}</span><span class="msg">${l.msg}</span></div>`;
+  }).join('');
+}
+
+/* =========================================================================
+   MAIN LOOP / CONTROLS
+   ========================================================================= */
+
+let running = true;
+let speedMult = 1;
+let tickTimer = null;
+const BASE_TICK_MS = 1000;
+
+function startLoop(){
+  stopLoop();
+  tickTimer = setInterval(()=>{
+    if(!running) return;
+    simTick(world);
+    renderSidebar();
+  }, BASE_TICK_MS/speedMult);
+}
+function stopLoop(){ if(tickTimer) clearInterval(tickTimer); }
+
+function rafLoop(){
+  glowPhase += 1;
+  drawMap();
+  requestAnimationFrame(rafLoop);
+}
+
+function initWorld(){
+  world = buildWorld(Date.now() % 1000000);
+  logLine(world,'info', `Simulation initialized — ${world.n} nodes, ${world.adj.reduce((s,a)=>s+a.length,0)/2} weighted edges, ${world.ambulances.length} ambulances, ${world.hospitalIds.length} facilities.`);
+  renderSidebar();
+}
+
+document.getElementById('btnPlay').addEventListener('click', function(){
+  running = !running;
+  this.textContent = running ? '⏸ Pause' : '▶ Resume';
+  this.classList.toggle('primary', running);
+});
+document.getElementById('btnEmergency').addEventListener('click', ()=>{
+  spawnRequest(world);
+  renderSidebar();
+});
+document.getElementById('btnClosure').addEventListener('click', ()=>{
+  triggerRandomClosure(world);
+  renderSidebar();
+});
+document.getElementById('btnReset').addEventListener('click', ()=>{
+  initWorld();
+});
+document.getElementById('speedSlider').addEventListener('input', function(){
+  speedMult = parseFloat(this.value);
+  document.getElementById('speedVal').textContent = speedMult.toFixed(1)+'x';
+  startLoop();
+});
+
+window.addEventListener('resize', resizeCanvas);
+
+resizeCanvas();
+initWorld();
+startLoop();
+requestAnimationFrame(rafLoop);
+
+})();
+</script>
+</body>
+</html>
