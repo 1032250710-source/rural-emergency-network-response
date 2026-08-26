@@ -1,0 +1,19 @@
+# dependencies
+node_modules/
+
+# logs
+npm-debug.log*
+*.log
+
+# environment
+.env
+.env.local
+
+# OS/editor cruft
+.DS_Store
+.vscode/
+.idea/
+
+# build artifacts (none currently, kept for safety)
+dist/
+build/
